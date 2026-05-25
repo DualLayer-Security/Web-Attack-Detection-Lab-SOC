@@ -252,5 +252,3 @@ Este proyecto representa un flujo completo de trabajo en un entorno SOC real:
 👉 Respuesta  
 
 Enfocado en evidencias y comportamiento, no en herramientas de ataque.
-- Uso de Fail2ban
-- Mejora de monitorización
