@@ -1,123 +1,174 @@
-# 🛡️ Web Attack Detection Lab (SOC Incident Analysis)
+# 🛡️ Web Attack Detection Lab (Análisis de Incidente SOC)
 
-## 📌 Overview
+## 📌 Descripción General
 
 Este laboratorio simula un escenario real de un **Security Operations Center (SOC)**, donde se analiza tráfico malicioso dirigido a un servidor web Apache.
 
-El objetivo es detectar, analizar, correlacionar y responder a actividad sospechosa utilizando logs del sistema.
+El enfoque principal no es el ataque en sí, sino la **detección, análisis, correlación y respuesta ante actividad sospechosa**, utilizando como fuente principal los logs del sistema.
 
 ---
 
-## 🧱 Environment
+## 🎯 Objetivos
 
-| Component | Role |
-|----------|------|
-| Ubuntu Server | Web Server (Apache2) |
-| Kali Linux | Traffic Generator |
-
----
-
-## ⚙️ System Setup
-
-Servidor Apache desplegado en Ubuntu.
-
-![Apache Running](./01-Apache-Srvice-Running.png)
+- Monitorizar tráfico HTTP en tiempo real
+- Detectar patrones de comportamiento malicioso
+- Identificar intentos de explotación web
+- Correlacionar eventos en una línea temporal
+- Aplicar medidas de contención
 
 ---
 
-## 🌐 Network Configuration
+## 🧱 Entorno
 
-IP del servidor Ubuntu.
+| Componente | Función |
+|----------|--------|
+| Ubuntu Server | Servidor web (Apache2) + fuente de logs |
+| Kali Linux | Generador de tráfico (simulación de atacante) |
+
+---
+
+## ⚙️ 1. Configuración del Sistema
+
+Se despliega y verifica el servicio Apache en el servidor Ubuntu.
+
+![Apache Running](./01-Apache-Running.png)
+
+---
+
+## 🌐 2. Configuración de Red
+
+Se obtiene la dirección IP del servidor para permitir la comunicación con la máquina atacante.
 
 ![Ubuntu IP](./02-IP-Ubuntu.png)
 
 ---
 
-## 🌍 Web Access Validation
+## 🌍 3. Validación de Acceso Web
 
-Acceso al servidor desde Kali.
+Se comprueba que el servidor es accesible desde Kali mediante navegador.
 
 ![Web Access](./03-Web-Access-From-Kali.png)
 
 ---
 
-## 📂 Endpoint Validation
+## 📂 4. Validación de Endpoints
 
-Validación de endpoints web:
+Se crean y validan distintos endpoints web:
 
-- /admin  
-- /login  
-- /test  
+- `/admin`  
+- `/login`  
+- `/test`  
+
+Esto simula una superficie de ataque real.
 
 ![Endpoints](./04-Web-Endpoints-Validation.png)
 
 ---
 
-## 🔍 Traffic Generation
+## 🔍 5. Generación de Tráfico
 
-Peticiones HTTP manuales con curl.
+Se generan peticiones HTTP manuales desde Kali utilizando `curl`.
+
+Esto permite simular tráfico inicial de reconocimiento.
 
 ![Curl Requests](./05-Manual-Curl-Requests.png)
 
 ---
 
-## 📡 Detection Phase
+# 📡 6. Fase de Detección (SOC)
 
-### 🔵 Real-Time Monitoring
+## 🔵 Monitorización en Tiempo Real
+
+Se monitoriza el archivo de logs del servidor Apache:
 
 ```bash
 tail -f /var/log/apache2/access.log
 ```
 
+Esto permite observar en directo todas las peticiones entrantes.
+
 ![Realtime Logs](./06-Realtime-Access-Logs.png)
 
 ---
 
-### 🟡 Fuzzing Detection
+## 🟡 Detección de Fuzzing
 
-Actividad automatizada detectada en logs.
+Se identifica un alto volumen de peticiones a múltiples rutas inexistentes.
+
+Indicadores clave:
+
+- Muchas requests en poco tiempo
+- Rutas aleatorias o comunes (`/admin`, `/phpmyadmin`, etc.)
+- User-Agent automatizado
 
 ![Fuzzing](./07-Fuzzing-Logs-Detected.png)
 
 ---
 
-### 🔴 SQL Injection Attempt
+## 🔴 Detección de SQL Injection
 
-Detección de payload en logs.
+Se detectan intentos de manipulación de parámetros mediante payloads maliciosos.
+
+Ejemplo típico:
+
+```
+' OR 1=1--
+```
+
+Esto indica un intento de bypass de autenticación.
 
 ![SQLi](./08-Sqli-Log-Entry.png)
 
 ---
 
-### 🔴 Path Traversal Attempt
+## 🔴 Detección de Path Traversal
 
-Intento de acceso a archivos del sistema.
+Se identifican intentos de acceso a archivos sensibles del sistema:
+
+```
+../../etc/passwd
+```
+
+Esto representa un intento de acceso no autorizado al sistema operativo.
 
 ![Traversal](./09-Path-Traversal-Log-Entry.png)
 
 ---
 
-## 🧠 Analysis Phase
+# 🧠 7. Fase de Análisis
 
-### 📊 Pattern Analysis
+## 📊 Análisis de Patrones
 
-Clasificación de actividad en logs.
+Se clasifican los logs según el tipo de actividad detectada:
+
+- Reconocimiento
+- Fuzzing automatizado
+- Intentos de SQL Injection
+- Intentos de Path Traversal
 
 ![Analysis](./10-Logs-Clasification-Admin.png)
 
 ---
 
-### 🧩 Attack Correlation
+## 🧩 Correlación del Ataque
 
-Secuencia completa del ataque.
+Se reconstruye la secuencia completa del incidente:
+
+1. Reconocimiento de endpoints
+2. Enumeración automatizada
+3. Intentos de explotación
+
+Esto permite entender el comportamiento del atacante.
 
 ![Timeline](./11-Full-Timeline-Correlation.png)
 
 ---
 
-## 🚨 Response Phase
+# 🚨 8. Fase de Respuesta
 
-### 🛑 IP Blocking
+## 🛑 Contención del Ataque
+
+Se bloquea la IP atacante mediante reglas de firewall:
 
 ```bash
 sudo iptables -A INPUT -s <ATTACKER_IP> -j DROP
@@ -127,47 +178,79 @@ sudo iptables -A INPUT -s <ATTACKER_IP> -j DROP
 
 ---
 
-### 🔒 Block Validation
+## 🔒 Verificación del Bloqueo
 
-Verificación desde Kali.
+Se comprueba desde Kali que el acceso ya no es posible.
 
 ![Blocked](./13-Attack-Blocked-Validation.png)
 
 ---
 
-### 📊 Post-Mitigation
+## 📊 Validación Post-Mitigación
 
-Validación de tráfico tras bloqueo.
+Se analiza el comportamiento del tráfico tras aplicar la regla.
+
+Resultado:
+
+- Cese del tráfico malicioso
+- Mitigación efectiva del incidente
 
 ![Post](./14-Post-Mitigation-Traffic-Validation.png)
 
 ---
 
-## 📊 Findings
+# 📊 Hallazgos
 
-- Reconocimiento de endpoints detectado
-- Fuzzing automatizado identificado
-- Intentos de SQL Injection
-- Intentos de Path Traversal
-- Correlación de eventos
-- Respuesta mediante firewall
+- Detección de reconocimiento de endpoints web
+- Identificación de actividad automatizada (fuzzing)
+- Intentos de explotación mediante SQL Injection
+- Intentos de acceso a archivos sensibles (Path Traversal)
+- Correlación completa del ataque
+- Respuesta efectiva mediante firewall
 
 ---
 
-## 🧠 Conclusions
+# 🧠 Conclusiones
 
-El tráfico analizado corresponde a un ataque web en múltiples fases:
+El comportamiento observado corresponde a un ataque web en múltiples fases:
 
 1. Reconocimiento  
 2. Enumeración  
 3. Intentos de explotación  
 
+Este laboratorio demuestra cómo un analista SOC puede detectar y analizar amenazas **sin necesidad de ver directamente el ataque**, únicamente mediante logs.
+
 ---
 
-## 🛡️ Recommendations
+# 🛡️ Recomendaciones
 
-- Implementar WAF
-- Integrar SIEM (Wazuh / ELK)
-- Alertas por volumen de tráfico
+- Implementar un WAF (Web Application Firewall)
+- Integrar un SIEM (Wazuh, ELK)
+- Configurar alertas por volumen de peticiones
+- Automatizar bloqueos con Fail2ban
+- Mejorar la monitorización y retención de logs
+
+---
+
+# 💼 Habilidades Demostradas
+
+- Análisis de logs HTTP
+- Detección de amenazas web
+- Correlación de eventos
+- Respuesta a incidentes
+- Monitorización en tiempo real
+
+---
+
+# 🏁 Nota Final
+
+Este proyecto representa un flujo completo de trabajo en un entorno SOC real:
+
+👉 Detección  
+👉 Análisis  
+👉 Correlación  
+👉 Respuesta  
+
+Enfocado en evidencias y comportamiento, no en herramientas de ataque.
 - Uso de Fail2ban
 - Mejora de monitorización
